@@ -31,32 +31,6 @@ void usage(void)
 	cout << "Usage: ./main images..." <<endl;
 }
 
-int read_image_into_rgb888(const string &path, uint8_t *buf,
-						 size_t width, size_t height)
-{
-	cv::Mat raw;
-	cv::Mat rsz;
-	cv::Mat rgb;
-
-	// read image
-	raw = cv::imread(path);
-	if(raw.data == NULL){
-		cerr << "fail to load an image from " << path << endl;
-		return -1;
-	}
-	cv::resize(raw, rsz, cv::Size(width, height));
-	cv::cvtColor(rsz, rgb, cv::COLOR_BGR2RGB);
-	if(!rgb.isContinuous()){
-		rgb = rgb.clone();
-	}
-
-	// copy image
-	size_t bufsz = rgb.total() * 3;
-	memcpy(buf, rgb.data, bufsz);
-
-	return 0;
-}
-
 // This preprocessing do the belows
 // - convert uint8_t to __fp16
 // - transpose image
@@ -75,21 +49,25 @@ void preproc_image(const uint8_t *src, __fp16 *dst, size_t width, size_t height)
 int read_and_preprocess_image(const string &path, __fp16 *input_buf,
 							  			size_t width, size_t height)
 {
-	uint8_t *rgb_buf = nullptr;
-	rgb_buf = new (nothrow) uint8_t[width * height * 3];
-	if(!rgb_buf){
-		cerr << "fail to allocate memory" << endl;
+	cv::Mat raw;
+	cv::Mat rsz;
+	cv::Mat rgb;
+
+	// read image
+	raw = cv::imread(path);
+	if(raw.data == NULL){
+		cerr << "fail to load an image from " << path << endl;
 		return -1;
 	}
-
-	if(read_image_into_rgb888(path, rgb_buf, width, height) < 0){
-		delete[] rgb_buf;
-		return -1;
+	cv::resize(raw, rsz, cv::Size(width, height));
+	cv::cvtColor(rsz, rgb, cv::COLOR_BGR2RGB);
+	if(!rgb.isContinuous()){
+		rgb = rgb.clone();
 	}
 
-	preproc_image(rgb_buf, input_buf, width, height);
+	// preproc_image
+	preproc_image(rgb.data, input_buf, width, height);
 
-	delete[] rgb_buf;
 	return 0;
 }
 
