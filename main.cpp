@@ -65,9 +65,9 @@ void preproc_image(const uint8_t *src, __fp16 *dst, size_t width, size_t height)
 {
 	for(size_t c = 0; c < width; c++){
 		for(size_t r = 0; r < height; r++){
-			dst[r * width + c + 0] = (__fp16)(src[c * height + r + 0] - 128);
-			dst[r * width + c + 1] = (__fp16)(src[c * height + r + 1] - 128);
-			dst[r * width + c + 2] = (__fp16)(src[c * height + r + 2] - 128);
+			dst[(c * height + r) * 3 + 0] = (__fp16)(src[(r * width + c) * 3 + 0] - 128);
+			dst[(c * height + r) * 3 + 1] = (__fp16)(src[(r * width + c) * 3 + 1] - 128);
+			dst[(c * height + r) * 3 + 2] = (__fp16)(src[(r * width + c) * 3 + 2] - 128);
 		}
 	}
 }
