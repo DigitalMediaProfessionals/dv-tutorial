@@ -138,7 +138,7 @@ int main(int argc, const char *argv[])
 	}
 
 	// init
-	if(!init_net(net, &net_input_addr)){
+	if(init_net(net, &net_input_addr) != 0){
 		cerr << "fail to initialize network" << endl;
 		return -1;
 	}
