@@ -23,38 +23,37 @@
 
 using namespace std;
 
+static const size_t NET_INPUT_HEIGHT = 244;
+static const size_t NET_INPUT_WIDTH  = 244;
+
 void usage(void)
 {
 	cout << "Usage: ./main images..." <<endl;
 }
 
-int read_image_into_rgb888(const string &path, uint8_t **buf,
-						 size_t *width, size_t *height)
+int read_image_into_rgb888(const string &path, uint8_t *buf,
+						 size_t width, size_t height)
 {
+	cv::Mat raw;
+	cv::Mat rsz;
+	cv::Mat rgb;
+
 	// read image
-	cv::Mat raw = cv::imread(path);
+	raw = cv::imread(path);
 	if(raw.data == NULL){
 		cerr << "fail to load an image from " << path << endl;
 		return -1;
 	}
-	cv::Mat rgb;
-	cv::cvtColor(raw, rgb, cv::COLOR_BGR2RGB);
+	cv::resize(raw, rsz, cv::Size(width, height));
+	cv::cvtColor(rsz, rgb, cv::COLOR_BGR2RGB);
 	if(!rgb.isContinuous()){
 		rgb = rgb.clone();
 	}
 
 	// copy image
 	size_t bufsz = rgb.total() * 3;
-	*buf = new uint8_t[bufsz];
-	if(!buf){
-		cerr << "fail to allocate memory" << endl;
-		return -1;
-	}
-	memcpy(*buf, rgb.data, bufsz);
+	memcpy(buf, rgb.data, bufsz);
 
-	// set size
-	*width  = rgb.cols;
-	*height = rgb.rows;
 	return 0;
 }
 
@@ -73,20 +72,22 @@ void preproc_image(const uint8_t *src, __fp16 *dst, size_t width, size_t height)
 	}
 }
 
-int read_and_preprocess_image(const string &path, __fp16 **input_buf,
-							  			size_t *width, size_t *height)
+int read_and_preprocess_image(const string &path, __fp16 *input_buf,
+							  			size_t width, size_t height)
 {
 	uint8_t *rgb_buf = nullptr;
-	if(read_image_into_rgb888(path, &rgb_buf, width, height) < 0){
+	rgb_buf = new (nothrow) uint8_t[width * height * 3];
+	if(!rgb_buf){
+		cerr << "fail to allocate memory" << endl;
 		return -1;
 	}
-	*input_buf = new (nothrow) __fp16[*width * *height * 3];
-	if(!input_buf){
-		cerr << "fail to allocate memory" << endl;
+
+	if(read_image_into_rgb888(path, rgb_buf, width, height) < 0){
 		delete[] rgb_buf;
 		return -1;
 	}
-	preproc_image(rgb_buf, *input_buf, *width, *height);
+
+	preproc_image(rgb_buf, input_buf, width, height);
 
 	delete[] rgb_buf;
 	return 0;
@@ -145,32 +146,27 @@ int main(int argc, const char *argv[])
 
 	// main loop
 	for(int i = 1; i < argc && ret == 0; i++){
-		__fp16 *input_buf    = nullptr;
+		__fp16 input_buf[NET_INPUT_WIDTH * NET_INPUT_HEIGHT * 3];
 		const char *img_path = argv[i];
 		std::vector<float> output;
-		size_t width  = 0;
-		size_t height = 0;
 
 		// read and preprocess image
-		if(read_and_preprocess_image(img_path, &input_buf, &width, &height) < 0){
+		if(read_and_preprocess_image(img_path, input_buf, NET_INPUT_WIDTH, NET_INPUT_HEIGHT) < 0){
 			ret = -1;
-			goto fin_loop;
+			break;
 		}
 		
 		// input image and run network
-		memcpy(net_input_addr, input_buf, width * height * 6);
+		memcpy(net_input_addr, input_buf, NET_INPUT_WIDTH * NET_INPUT_HEIGHT * 6);
 		if(!net.RunNetwork()){
 			cerr << "fail to run network" << endl;
 			ret = -1;
-			goto fin_loop;
+			break;
 		}
 
 		// get and output result
 		net.get_final_output(output);
 		cout << img_path << "," << categories[argmax(output)] << endl;
-		
-fin_loop:		
-		delete[] input_buf;
 	}
 
 	return ret;
