@@ -166,7 +166,7 @@ int main(int argc, const char *argv[])
 
 		// get and output result
 		net.get_final_output(output);
-		cout << img_path << "," << categories[argmax(output)] << endl;
+		cout << img_path << " , " << categories[argmax(output)] << endl;
 	}
 
 	return ret;
