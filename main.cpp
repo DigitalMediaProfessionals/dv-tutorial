@@ -23,8 +23,8 @@
 
 using namespace std;
 
-static const size_t NET_INPUT_HEIGHT = 244;
-static const size_t NET_INPUT_WIDTH  = 244;
+static const size_t NET_INPUT_HEIGHT = 224;
+static const size_t NET_INPUT_WIDTH  = 224;
 
 void usage(void)
 {
