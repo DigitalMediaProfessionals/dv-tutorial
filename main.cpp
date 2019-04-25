@@ -18,7 +18,7 @@
 #include <limits>
 #include <opencv2/opencv.hpp>
 
-#include "CaffeGoogLeNet_gen.h"
+#include "CaffeMobileNet_gen.h"
 #include "imagenet_1000_categories.h"
 
 using namespace std;
@@ -72,13 +72,13 @@ int read_and_preprocess_image(const string &path, __fp16 *input_buf,
 }
 
 
-int init_net(CCaffeGoogLeNet &net, void **input_addr)
+int init_net(CCaffeMobileNet &net, void **input_addr)
 {
 	if(!net.Initialize()){
 		cerr << "fail to initialize network" << endl;
 		return -1;
 	}
-	if(!net.LoadWeights("CaffeGoogLeNet/CaffeGoogLeNet_weights.bin")){
+	if(!net.LoadWeights("CaffeMobileNet/CaffeMobileNet_weights.bin")){
 		cerr << "fail to load weight" << endl;
 		return -1;
 	}
@@ -107,7 +107,7 @@ int argmax(vector<T> &v)
 int main(int argc, const char *argv[])
 {
 	int ret = 0;
-	CCaffeGoogLeNet net;
+	CCaffeMobileNet net;
 	void *net_input_addr = nullptr;
 
 	// usage
